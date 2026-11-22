@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TOKYO KART | Online Shopping</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#f4f7fc;color:#17243b}
+header{background:#1264d8;color:white;padding:17px 5%;display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap}
+.logo{font-size:27px;font-weight:900;letter-spacing:1px}
+.logo span{color:#ffdf55}
+.search{display:flex;background:white;border-radius:30px;overflow:hidden;flex:1;max-width:470px}
+.search input{border:0;outline:0;padding:13px;width:100%;font-size:15px}
+.search button{border:0;background:#ffda45;padding:0 18px;font-weight:bold}
+nav{display:flex;gap:17px}
+nav button{background:none;border:0;color:white;font-size:15px;cursor:pointer}
+.hero{margin:22px auto;background:linear-gradient(120deg,#0751bd,#65baff);color:white;border-radius:20px;padding:45px 7%;max-width:1200px;display:flex;justify-content:space-between;align-items:center;overflow:hidden}
+.hero h1{font-size:clamp(34px,6vw,60px);margin-bottom:14px}
+.hero p{font-size:18px;margin-bottom:22px}
+.hero button,.buy{background:#ffda45;color:#102b50;border:0;padding:13px 22px;border-radius:9px;font-weight:bold;cursor:pointer}
+.hero-art{font-size:100px;animation:float 3s infinite ease-in-out}
+@keyframes float{50%{transform:translateY(-15px)}}
+.wrap{max-width:1200px;margin:auto;padding:20px}
+h2{margin:15px 0 20px;font-size:27px}
+.categories{display:flex;gap:12px;overflow:auto;padding-bottom:12px}
+.categories button{border:1px solid #d9e5f5;background:white;padding:12px 20px;border-radius:25px;white-space:nowrap;cursor:pointer}
+.categories button.active{background:#1264d8;color:white}
+.products{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:17px}
+.card{background:white;border-radius:15px;padding:13px;box-shadow:0 3px 15px #173a6710;transition:.2s}
+.card:hover{transform:translateY(-5px)}
+.card img{width:100%;height:150px;object-fit:contain;border-radius:10px}
+.card h3{font-size:16px;margin:12px 0 8px}
+.price{font-size:19px;color:#1264d8;font-weight:bold;margin:9px 0}
+.old{font-size:13px;color:#999;text-decoration:line-through;margin-left:5px}
+.buy{width:100%;background:#1264d8;color:white;margin-top:7px}
+.cartbox{background:white;margin-top:30px;padding:20px;border-radius:15px}
+.cartrow{display:flex;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid #eee}
+footer{text-align:center;background:#102d55;color:white;padding:30px;margin-top:40px}
+footer p{margin:8px}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#102d55;color:white;padding:13px 22px;border-radius:30px;display:none}
+@media(max-width:600px){header{justify-content:center}.search{order:3;flex-basis:100%}.hero{margin:12px;padding:30px 20px}.hero-art{font-size:65px}.wrap{padding:15px}}
+</style>
+</head>
+<body>
+<header>
+<div class="logo">TOKYO <span>KART</span></div>
+<div class="search">
+<input id="search" placeholder="Search products..." oninput="render()">
+<button onclick="render()">Search</button>
+</div>
+<nav>
+<button onclick="showCart()">🛒 Cart (<span id="count">0</span>)</button>
+<button onclick="showWishlist()">♥ Wishlist</button>
+</nav>
+</header>
+
+<section class="hero">
+<div>
+<h1>Shop More.<br>Save More.</h1>
+<p>Discover amazing products and exciting deals!</p>
+<button onclick="document.getElementById('shop').scrollIntoView({behavior:'smooth'})">Explore Now →</button>
+</div>
+<div class="hero-art">🛍️</div>
+</section>
+
+<main class="wrap" id="shop">
+<h2>✨ Shop by Category</h2>
+<div class="categories" id="categories"></div>
+
+<h2>🔥 Today's Deals</h2>
+<div class="products" id="products"></div>
+
+<section class="cartbox" id="cartbox" style="display:none">
+<h2>🛒 Your Shopping Cart</h2>
+<div id="cartitems"></div>
+<h3 id="total" style="margin:15px 0"></h3>
+<button class="buy" onclick="checkout()">Proceed to Checkout</button>
+</section>
+</main>
+
+<footer>
+<h2>TOKYO KART</h2>
+<p>Your World. Your Shopping.</p>
+<p>Electronics | Fashion | Home | Accessories</p>
+<p>© 2026 TOKYO KART. All rights reserved.</p>
+</footer>
+<div id="toast"></div>
+
+<script>
+const products=[
+{id:1,name:"Wireless Headphones",cat:"Electronics",price:1499,old:2499,emoji:"🎧"},
+{id:2,name:"Smart Watch",cat:"Electronics",price:2199,old:3499,emoji:"⌚"},
+{id:3,name:"Running Shoes",cat:"Fashion",price:1799,old:2799,emoji:"👟"},
+{id:4,name:"Travel Backpack",cat:"Fashion",price:999,old:1599,emoji:"🎒"},
+{id:5,name:"Desk Lamp",cat:"Home",price:799,old:1199,emoji:"💡"},
+{id:6,name:"Bluetooth Speaker",cat:"Electronics",price:1299,old:1999,emoji:"🔊"},
+{id:7,name:"Sunglasses",cat:"Fashion",price:599,old:999,emoji:"🕶️"},
+{id:8,name:"Camera",cat:"Electronics",price:4999,old:5999,emoji:"📷"}
+];
+let cart=[];
+let wishlist=[];
+let category="All";
+const money=n=>"₹"+n.toLocaleString("en-IN");
+
+function renderCategories(){
+let cats=["All",...new Set(products.map(p=>p.cat))];
+document.getElementById("categories").innerHTML=cats.map(c=>
+`<button class="${category===c?'active':''}" onclick="category='${c}';renderCategories();render()">${c}</button>`
+).join("");
+}
+
+function render(){
+let q=document.getElementById("search").value.toLowerCase();
+let list=products.filter(p=>(category==="All"||p.cat===category)&&p.name.toLowerCase().includes(q));
+document.getElementById("products").innerHTML=list.map(p=>`
+<div class="card">
+<div style="font-size:90px;text-align:center;padding:15px">${p.emoji}</div>
+<h3>${p.name}</h3>
+<small>${p.cat}</small>
+<div class="price">${money(p.price)} <span class="old">${money(p.old)}</span></div>
+<button class="buy" onclick="addCart(${p.id})">Add to Cart</button>
+<button class="buy" style="background:#ffda45;color:#142d50" onclick="addWish(${p.id})">♡ Wishlist</button>
+</div>`).join("")||"<p>No products found.</p>";
+}
+
+function notify(msg){
+let t=document.getElementById("toast");
+t.innerText=msg;t.style.display="block";
+setTimeout(()=>t.style.display="none",2200);
+}
+function addCart(id){
+let p=products.find(x=>x.id===id);
+let found=cart.find(x=>x.id===id);
+if(found)found.qty++;else cart.push({...p,qty:1});
+updateCart();notify("Added to cart!");
+}
+function addWish(id){
+if(!wishlist.includes(id))wishlist.push(id);
+notify("Added to wishlist!");
+}
+function updateCart(){
+document.getElementById("count").innerText=cart.reduce((s,p)=>s+p.qty,0);
+}
+function showCart(){
+document.getElementById("cartbox").style.display="block";
+document.getElementById("cartitems").innerHTML=cart.map(p=>`
+<div class="cartrow">
+<span>${p.emoji} ${p.name} × ${p.qty}</span>
+<strong>${money(p.price*p.qty)}</strong>
+</div>`).join("")||"Your cart is empty.";
+document.getElementById("total").innerText="Total: "+money(cart.reduce((s,p)=>s+p.price*p.qty,0));
+document.getElementById("cartbox").scrollIntoView({behavior:"smooth"});
+}
+function showWishlist(){
+notify("Wishlist: "+wishlist.length+" products saved");
+}
+function checkout(){
+if(cart.length===0)return notify("Your cart is empty!");
+notify("Checkout demo! Payment setup required.");
+}
+renderCategories();render();
+</script>
+</body>
+</html>
