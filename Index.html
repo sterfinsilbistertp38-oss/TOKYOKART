@@ -1,0 +1,238 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TOKYO KART - Online Shopping</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Arial,sans-serif;background:#f4f7fc;color:#17243b}
+header{background:#1264d8;color:white;padding:16px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.logo{font-size:25px;font-weight:900}
+.logo span{color:#ffdc45}
+.search{display:flex;background:white;border-radius:25px;overflow:hidden;flex:1;max-width:450px}
+.search input{padding:13px;border:0;outline:0;width:100%;font-size:15px}
+.search button{background:#ffdc45;border:0;padding:12px;font-weight:bold}
+.actions button{background:transparent;border:0;color:white;font-size:15px;margin:5px;cursor:pointer}
+.hero{margin:20px;padding:35px 25px;border-radius:20px;background:linear-gradient(120deg,#0751bd,#62baff);color:white;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.hero h1{font-size:clamp(32px,7vw,55px);margin-bottom:12px}
+.hero p{margin-bottom:20px}
+.hero .art{font-size:85px;animation:float 3s infinite}
+@keyframes float{50%{transform:translateY(-12px)}}
+.yellow{background:#ffdc45;color:#17304d;border:0;padding:12px 20px;border-radius:8px;font-weight:bold;cursor:pointer}
+main{padding:18px;max-width:1200px;margin:auto}
+h2{margin:20px 0 15px}
+.categories{display:flex;gap:10px;overflow:auto}
+.categories button{background:white;border:1px solid #ddd;padding:12px 18px;border-radius:25px;white-space:nowrap}
+.categories button.active{background:#1264d8;color:white}
+.products{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.card{background:white;padding:12px;border-radius:14px;box-shadow:0 3px 12px #0000000d}
+.pic{height:120px;display:grid;place-items:center;font-size:70px;background:#f5f8ff;border-radius:10px}
+.card h3{font-size:16px;margin:12px 0}
+.price{font-size:19px;color:#1264d8;font-weight:bold}
+.old{font-size:12px;color:#999;text-decoration:line-through}
+.buy{width:100%;padding:11px;background:#1264d8;color:white;border:0;border-radius:8px;margin-top:10px;font-weight:bold}
+.wish{background:#fff0d0;color:#25344a}
+.panel{background:white;border-radius:14px;padding:18px;margin-top:25px;display:none}
+.item{display:flex;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid #eee}
+.item button{padding:5px}
+.checkout{background:#1264d8;color:white;padding:13px;border:0;border-radius:8px;width:100%;margin-top:15px}
+input,select{font-size:15px}
+.panel input,.panel select{width:100%;padding:12px;margin:8px 0;border:1px solid #ccc;border-radius:8px}
+footer{text-align:center;background:#102d55;color:white;padding:30px;margin-top:35px}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#102d55;color:white;padding:13px 20px;border-radius:25px;display:none;z-index:5}
+@media(min-width:650px){.products{grid-template-columns:repeat(4,1fr)}}
+</style>
+</head>
+<body>
+
+<header>
+<div class="logo">TOKYO <span>KART</span></div>
+<div class="search">
+<input id="search" placeholder="Search products..." oninput="render()">
+<button onclick="render()">Search</button>
+</div>
+<div class="actions">
+<button onclick="showPanel('cart')">🛒 Cart <span id="count">0</span></button>
+<button onclick="showPanel('wishlist')">♡ Wishlist</button>
+</div>
+</header>
+
+<section class="hero">
+<div>
+<h1>SHOP MORE.<br>SAVE MORE.</h1>
+<p>Discover amazing products and daily deals!</p>
+<button class="yellow" onclick="document.getElementById('shop').scrollIntoView({behavior:'smooth'})">SHOP NOW →</button>
+</div>
+<div class="art">🛍️</div>
+</section>
+
+<main id="shop">
+<h2>✨ Shop by Category</h2>
+<div class="categories" id="categories"></div>
+
+<h2>🔥 Today's Deals</h2>
+<div class="products" id="products"></div>
+
+<section class="panel" id="cart">
+<h2>🛒 Your Shopping Cart</h2>
+<div id="cartitems"></div>
+<h3 id="total"></h3>
+<button class="checkout" onclick="openCheckout()">Proceed to Checkout</button>
+</section>
+
+<section class="panel" id="wishlist">
+<h2>❤️ My Wishlist</h2>
+<div id="wishitems"></div>
+</section>
+
+<section class="panel" id="checkout">
+<h2>📦 Checkout</h2>
+<form onsubmit="placeOrder(event)">
+<input id="customer" placeholder="Your name" required>
+<input id="phone" type="tel" placeholder="Phone number" pattern="[0-9]{10}" required>
+<textarea id="address" placeholder="Delivery address" required style="width:100%;padding:12px;margin:8px 0;border-radius:8px"></textarea>
+<select id="payment">
+<option value="COD">Cash on Delivery</option>
+<option value="UPI">UPI (demo only)</option>
+<option value="Card">Card (demo only)</option>
+</select>
+<button class="checkout" type="submit">Place Order</button>
+</form>
+</section>
+</main>
+
+<footer>
+<h2>TOKYO KART 🛍️</h2>
+<p>Your World. Your Shopping.</p>
+<p>Electronics | Fashion | Home | Accessories</p>
+<p>© 2026 TOKYO KART</p>
+</footer>
+
+<div id="toast"></div>
+
+<script>
+const products=[
+{id:1,name:"Wireless Headphones",cat:"Electronics",price:1499,old:2499,emoji:"🎧"},
+{id:2,name:"Smart Watch",cat:"Electronics",price:2199,old:3499,emoji:"⌚"},
+{id:3,name:"Running Shoes",cat:"Fashion",price:1799,old:2799,emoji:"👟"},
+{id:4,name:"Travel Backpack",cat:"Fashion",price:999,old:1599,emoji:"🎒"},
+{id:5,name:"Desk Lamp",cat:"Home",price:799,old:1199,emoji:"💡"},
+{id:6,name:"Bluetooth Speaker",cat:"Electronics",price:1299,old:1999,emoji:"🔊"},
+{id:7,name:"Sunglasses",cat:"Fashion",price:599,old:999,emoji:"🕶️"},
+{id:8,name:"Camera",cat:"Electronics",price:4999,old:5999,emoji:"📷"},
+{id:9,name:"Coffee Mug",cat:"Home",price:299,old:499,emoji:"☕"},
+{id:10,name:"Gaming Controller",cat:"Electronics",price:1899,old:2599,emoji:"🎮"},
+{id:11,name:"Wall Clock",cat:"Home",price:699,old:999,emoji:"🕰️"},
+{id:12,name:"Cap",cat:"Fashion",price:399,old:699,emoji:"🧢"}
+];
+
+let cart=[];
+let wishlist=[];
+let category="All";
+const money=n=>"₹"+n.toLocaleString("en-IN");
+
+function renderCategories(){
+let cats=["All",...new Set(products.map(p=>p.cat))];
+document.getElementById("categories").innerHTML=cats.map(c=>
+`<button class="${category===c?'active':''}" onclick="category='${c}';renderCategories();render()">${c}</button>`
+).join("");
+}
+
+function render(){
+let q=document.getElementById("search").value.toLowerCase();
+let list=products.filter(p=>
+(category==="All"||p.cat===category)&&p.name.toLowerCase().includes(q)
+);
+document.getElementById("products").innerHTML=list.map(p=>`
+<div class="card">
+<div class="pic">${p.emoji}</div>
+<h3>${p.name}</h3>
+<p>${p.cat}</p>
+<div class="price">${money(p.price)} <span class="old">${money(p.old)}</span></div>
+<button class="buy" onclick="addCart(${p.id})">Add to Cart</button>
+<button class="buy wish" onclick="addWish(${p.id})">♡ Wishlist</button>
+</div>`).join("")||"<p>No products found.</p>";
+}
+
+function notify(msg){
+let t=document.getElementById("toast");
+t.innerText=msg;t.style.display="block";
+setTimeout(()=>t.style.display="none",2200);
+}
+
+function addCart(id){
+let p=products.find(x=>x.id===id);
+let found=cart.find(x=>x.id===id);
+if(found)found.qty++;
+else cart.push({...p,qty:1});
+updateCart();
+notify("Added to cart!");
+}
+
+function addWish(id){
+if(!wishlist.includes(id))wishlist.push(id);
+showPanel("wishlist");
+}
+
+function updateCart(){
+document.getElementById("count").innerText=cart.reduce((s,p)=>s+p.qty,0);
+}
+
+function showPanel(name){
+["cart","wishlist","checkout"].forEach(id=>
+document.getElementById(id).style.display="none");
+let panel=document.getElementById(name);
+panel.style.display="block";
+
+if(name==="cart")renderCart();
+if(name==="wishlist"){
+document.getElementById("wishitems").innerHTML=wishlist.map(id=>{
+let p=products.find(x=>x.id===id);
+return `<div class="item">${p.emoji} ${p.name} - ${money(p.price)}</div>`;
+}).join("")||"Your wishlist is empty.";
+}
+panel.scrollIntoView({behavior:"smooth"});
+}
+
+function renderCart(){
+document.getElementById("cartitems").innerHTML=cart.map(p=>`
+<div class="item">
+<span>${p.emoji} ${p.name} × ${p.qty}</span>
+<strong>${money(p.price*p.qty)}</strong>
+<button onclick="removeItem(${p.id})">✖</button>
+</div>`).join("")||"Your cart is empty.";
+document.getElementById("total").innerText=
+"Total: "+money(cart.reduce((s,p)=>s+p.price*p.qty,0));
+}
+
+function removeItem(id){
+cart=cart.filter(p=>p.id!==id);
+updateCart();
+renderCart();
+}
+
+function openCheckout(){
+if(!cart.length)return notify("Your cart is empty!");
+showPanel("checkout");
+}
+
+function placeOrder(e){
+e.preventDefault();
+if(!cart.length)return notify("Your cart is empty!");
+let name=document.getElementById("customer").value;
+let total=cart.reduce((s,p)=>s+p.price*p.qty,0);
+let payment=document.getElementById("payment").value;
+alert("Thank you "+name+"!\nYour demo order total is "+money(total)+"\nPayment method: "+payment+"\n\nThis is a demonstration. No real order or payment has been processed.");
+cart=[];
+updateCart();
+e.target.reset();
+showPanel("cart");
+}
+
+renderCategories();
+render();
+</script>
+</body>
+</html>
